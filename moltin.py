@@ -22,7 +22,40 @@ def get_all_products(url, token_type, token):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     response = response.json()
-    return response
+    return response['data']
+
+
+def get_id_product(product):
+    return product['id']
+
+
+def get_cart(token_type, token, cart_name):
+    headers = {
+        'Authorization': f'{token_type} {token}',
+    }
+
+    response = requests.get(f'https://api.moltin.com/v2/carts/{cart_name}', headers=headers)
+    response.raise_for_status()
+    pprint(response.json())
+
+
+def add_product_to_cart(token_type, token, product_id, cart_name):
+    headers = {
+        'Authorization': f'{token_type} {token}',
+        'Content-Type': 'application/json',
+    }
+
+    data = {'data':
+            {
+                'id': product_id,
+                'type': 'cart_item',
+                'quantity': 1
+            }
+           }
+
+    response = requests.post(f'https://api.moltin.com/v2/carts/{cart_name}/items', headers=headers, json=data)
+    response.raise_for_status()
+    pprint(response.json())
 
 
 def main():
@@ -34,8 +67,14 @@ def main():
 
     client_id = env('MULTIN_CLIENT_ID')
     client_secret = env('MULTIN_CLIENT_SECRET')
+
     access_token, token_type = get_access_token(access_token_url, client_id, client_secret)
     all_products = get_all_products(all_products_url, token_type, access_token)
+
+    for prosuct in all_products:
+        product_id = get_id_product(prosuct)
+        add_product_to_cart(token_type, access_token, product_id, '3456546')
+        break
 
 
 if __name__ == "__main__":

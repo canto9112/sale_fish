@@ -6,6 +6,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
 from functools import partial
+import moltin
+from pprint import pprint
 
 _database = None
 
@@ -18,17 +20,16 @@ def button(bot, update):
                           message_id=query.message.message_id)
 
 
-def start(bot, update):
-
-    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
-
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
+def start(bot, update, products):
+    keyboard = []
+    for product in products:
+        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
+        keyboard.append(button)
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
-    return "ECHO"
+    return "BUTTON"
 
 
 def echo(bot, update):
@@ -38,18 +39,12 @@ def echo(bot, update):
 
 
 def handle_users_reply(bot, update):
-    """
-    Функция, которая запускается при любом сообщении от пользователя и решает как его обработать.
-    Эта функция запускается в ответ на эти действия пользователя:
-        * Нажатие на inline-кнопку в боте
-        * Отправка сообщения боту
-        * Отправка команды боту
-    Она получает стейт пользователя из базы данных и запускает соответствующую функцию-обработчик (хэндлер).
-    Функция-обработчик возвращает следующее состояние, которое записывается в базу данных.
-    Если пользователь только начал пользоваться ботом, Telegram форсит его написать "/start",
-    поэтому по этой фразе выставляется стартовое состояние.
-    Если пользователь захочет начать общение с ботом заново, он также может воспользоваться этой командой.
-    """
+    moltin_client_id = env('MULTIN_CLIENT_ID')
+    moltin_client_secret = env('MULTIN_CLIENT_SECRET')
+
+    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    products = moltin.get_all_products(moltin_access_token)
+
     db = get_database_connection()
     if update.message:
         user_reply = update.message.text
@@ -65,13 +60,10 @@ def handle_users_reply(bot, update):
         user_state = db.get(chat_id).decode("utf-8")
 
     states_functions = {
-        'START': start,
-        'ECHO': button
+        'START': partial(start, products=products),
+        'BUTTON': button
     }
     state_handler = states_functions[user_state]
-    # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
-    # Оставляю этот try...except, чтобы код не падал молча.
-    # Этот фрагмент можно переписать.
     try:
         next_state = state_handler(bot, update)
         db.set(chat_id, next_state)
@@ -95,9 +87,16 @@ def get_database_connection():
 if __name__ == '__main__':
     env = Env()
     env.read_env()
-    token = env("TELEGRAM_TOKEN")
 
-    updater = Updater(token)
+    # moltin_client_id = env('MULTIN_CLIENT_ID')
+    # moltin_client_secret = env('MULTIN_CLIENT_SECRET')
+
+    telegram_token = env("TELEGRAM_TOKEN")
+
+    # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    # products = moltin.get_all_products(moltin_access_token)
+
+    updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
     dispatcher.add_handler(CallbackQueryHandler(button))

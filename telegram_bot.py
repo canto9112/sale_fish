@@ -12,10 +12,21 @@ from pprint import pprint
 _database = None
 
 
-def button(bot, update):
+def handle_menu(bot, update, acces_token):
     query = update.callback_query
+    product = moltin.get_product(acces_token, query.data)
+    pprint(product)
 
-    bot.edit_message_text(text=f"Selected option: {query.data}",
+    print('==========')
+    product_name = product['data']['name']
+    price = product['data']['meta']['display_price']['with_tax']['formatted']
+    stock = product['data']['meta']['stock']['level']
+    description = product['data']['description']
+
+    bot.edit_message_text(text=f"{product_name}\n"
+                               f"{price} per kg\n"
+                               f"{stock}kg on stock\n"
+                               f"{description}",
                           chat_id=query.message.chat_id,
                           message_id=query.message.message_id)
 
@@ -29,7 +40,7 @@ def start(bot, update, products):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
-    return "BUTTON"
+    return "HANDLE_MENU"
 
 
 def echo(bot, update):
@@ -61,7 +72,7 @@ def handle_users_reply(bot, update):
 
     states_functions = {
         'START': partial(start, products=products),
-        'BUTTON': button
+        'HANDLE_MENU': partial(handle_menu, acces_token=moltin_access_token),
     }
     state_handler = states_functions[user_state]
     try:
@@ -99,7 +110,7 @@ if __name__ == '__main__':
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(CallbackQueryHandler(handle_menu))
     dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dispatcher.add_handler(CommandHandler('start', handle_users_reply))
 

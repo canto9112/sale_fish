@@ -12,23 +12,24 @@ from pprint import pprint
 _database = None
 
 
-def handle_menu(bot, update, acces_token):
+def handle_menu(bot, update, access_token):
     query = update.callback_query
-    product = moltin.get_product(acces_token, query.data)
-    pprint(product)
-
+    product = moltin.get_product(access_token, query.data)
+    print(update.callback_query.message['message_id'])
     print('==========')
     product_name = product['data']['name']
     price = product['data']['meta']['display_price']['with_tax']['formatted']
     stock = product['data']['meta']['stock']['level']
     description = product['data']['description']
-
-    bot.edit_message_text(text=f"{product_name}\n"
-                               f"{price} per kg\n"
-                               f"{stock}kg on stock\n"
-                               f"{description}",
-                          chat_id=query.message.chat_id,
-                          message_id=query.message.message_id)
+    file_id = product['data']['relationships']['main_image']['data']['id']
+    image = moltin.get_image_url(access_token, file_id)
+    bot.send_photo(query.message.chat_id, image, caption=f"{product_name}\n"
+                                                         f"{price} per kg\n"
+                                                         f"{stock}kg on stock\n"
+                                                         f"{description}")
+    old_message = update.callback_query.message['message_id']
+    bot.delete_message(chat_id=query.message.chat_id,
+                       message_id=old_message)
 
 
 def start(bot, update, products):
@@ -72,7 +73,7 @@ def handle_users_reply(bot, update):
 
     states_functions = {
         'START': partial(start, products=products),
-        'HANDLE_MENU': partial(handle_menu, acces_token=moltin_access_token),
+        'HANDLE_MENU': partial(handle_menu, access_token=moltin_access_token),
     }
     state_handler = states_functions[user_state]
     try:

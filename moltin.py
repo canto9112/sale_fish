@@ -69,6 +69,16 @@ def get_cart_items(token, cart_name):
     return response.json()
 
 
+def get_product(token, product_id):
+    headers = {
+        'Authorization': f'Bearer {token}',
+    }
+
+    response = requests.get(f'https://api.moltin.com/v2/products/{product_id}', headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+
 def main():
     env = Env()
     env.read_env()
@@ -81,10 +91,14 @@ def main():
 
     for product in all_products:
         product_id = get_id_product(product)
+        product_ = get_product(access_token, product_id)
+        pprint(product_['data']['description'])
+
+
         # add_product = add_product_to_cart(access_token, product_id, '3456546', 2)
         # cart = get_cart(access_token, '3456546')
         # pprint(cart)
-        pprint(get_cart_items(access_token, '34565464'))
+        # pprint(get_cart_items(access_token, '34565464'))
         break
 
 

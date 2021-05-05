@@ -12,7 +12,25 @@ from pprint import pprint
 _database = None
 
 
+def start(bot, update, products):
+    keyboard = []
+    for product in products:
+        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
+        keyboard.append(button)
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+    return "HANDLE_MENU"
+
+
 def handle_menu(bot, update, access_token):
+
+    keyboard = [[InlineKeyboardButton("Назад", callback_data='Назад')]]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     query = update.callback_query
     product = moltin.get_product(access_token, query.data)
     print(update.callback_query.message['message_id'])
@@ -26,28 +44,19 @@ def handle_menu(bot, update, access_token):
     bot.send_photo(query.message.chat_id, image, caption=f"{product_name}\n"
                                                          f"{price} per kg\n"
                                                          f"{stock}kg on stock\n"
-                                                         f"{description}")
+                                                         f"{description}", reply_markup=reply_markup)
     old_message = update.callback_query.message['message_id']
+
     bot.delete_message(chat_id=query.message.chat_id,
                        message_id=old_message)
+    return "HANDLE_DESCRIPTION"
 
 
-def start(bot, update, products):
-    keyboard = []
-    for product in products:
-        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
-        keyboard.append(button)
+def handle_description(bot, update):
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
-    return "HANDLE_MENU"
-
-
-def echo(bot, update):
-    users_reply = update.message.text
-    update.message.reply_text(users_reply)
-    return "ECHO"
+    query = update.callback_query
+    if query.data == 'Назад':
+        return "HANDLE_MENU"
 
 
 def handle_users_reply(bot, update):
@@ -74,6 +83,7 @@ def handle_users_reply(bot, update):
     states_functions = {
         'START': partial(start, products=products),
         'HANDLE_MENU': partial(handle_menu, access_token=moltin_access_token),
+        'HANDLE_DESCRIPTION': handle_description
     }
     state_handler = states_functions[user_state]
     try:
@@ -84,9 +94,6 @@ def handle_users_reply(bot, update):
 
 
 def get_database_connection():
-    """
-    Возвращает конекшн с базой данных Redis, либо создаёт новый, если он ещё не создан.
-    """
     global _database
     if _database is None:
         database_password = env("REDIS_PASSWORD")
@@ -100,16 +107,11 @@ if __name__ == '__main__':
     env = Env()
     env.read_env()
 
-    # moltin_client_id = env('MULTIN_CLIENT_ID')
-    # moltin_client_secret = env('MULTIN_CLIENT_SECRET')
-
     telegram_token = env("TELEGRAM_TOKEN")
-
-    # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    # products = moltin.get_all_products(moltin_access_token)
 
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
+
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
     dispatcher.add_handler(CallbackQueryHandler(handle_menu))
     dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))

@@ -12,18 +12,6 @@ from pprint import pprint
 _database = None
 
 
-def get_product(bot, update, access_token):
-    query = update.callback_query
-    product = moltin.get_product(access_token, query.data)
-
-    product_name = product['data']['name']
-    price = product['data']['meta']['display_price']['with_tax']['formatted']
-    stock = product['data']['meta']['stock']['level']
-    description = product['data']['description']
-    file_id = product['data']['relationships']['main_image']['data']['id']
-    return product
-
-
 def del_old_message(bot, update):
     query = update.callback_query
     old_message = update.callback_query.message['message_id']

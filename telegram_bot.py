@@ -35,7 +35,8 @@ def handle_menu(bot, update, access_token):
     keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}'),
                  InlineKeyboardButton("5 кг", callback_data=f'{5}/{query.data}'),
                  InlineKeyboardButton("10 кг", callback_data=f'{10}/{query.data}')],
-                [InlineKeyboardButton("Назад", callback_data=f'{"Назад"}/{query.data}')]]
+                [InlineKeyboardButton("Назад", callback_data=f'{"Назад"}/{query.data}')],
+                [InlineKeyboardButton("Корзина", callback_data=f'{"Корзина"}/{query.data}')]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -60,7 +61,7 @@ def handle_description(bot, update, products, access_token):
     query = update.callback_query
 
     button, product_id = query.data.split('/')
-
+    print(button)
     if button == 'Назад':
         # start(bot, update, products)
         del_old_message(bot, update)
@@ -71,10 +72,17 @@ def handle_description(bot, update, products, access_token):
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
+
+    elif button == 'Корзина':
+        cart = moltin.get_cart(access_token, query.message.chat_id)
+        cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
+
+        total_price = cart['data']['meta']['display_price']['with_tax']['formatted']
+        bot.send_message(chat_id=query.message.chat_id, text=f'Всего на сумму:\n'
+                                                             f'{total_price}')
+
     elif button:
         moltin.add_product_to_cart(access_token, product_id, query.message.chat_id, button)
-        cart = moltin.get_cart(access_token, query.message.chat_id)
-        pprint(cart)
         return "HANDLE_DESCRIPTION"
 
 

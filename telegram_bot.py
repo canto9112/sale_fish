@@ -12,6 +12,18 @@ from pprint import pprint
 _database = None
 
 
+def get_product(bot, update, access_token):
+    query = update.callback_query
+    product = moltin.get_product(access_token, query.data)
+
+    product_name = product['data']['name']
+    price = product['data']['meta']['display_price']['with_tax']['formatted']
+    stock = product['data']['meta']['stock']['level']
+    description = product['data']['description']
+    file_id = product['data']['relationships']['main_image']['data']['id']
+    return product
+
+
 def del_old_message(bot, update):
     query = update.callback_query
     old_message = update.callback_query.message['message_id']
@@ -31,10 +43,14 @@ def start(bot, update, products):
 
 
 def handle_menu(bot, update, access_token):
-    keyboard = [[InlineKeyboardButton("Назад", callback_data='Назад')]]
+    query = update.callback_query
+    keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}'),
+                 InlineKeyboardButton("5 кг", callback_data=f'{5}/{query.data}'),
+                 InlineKeyboardButton("10 кг", callback_data=f'{10}/{query.data}')],
+                [InlineKeyboardButton("Назад", callback_data=f'{"Назад"}/{query.data}')]]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query = update.callback_query
     product = moltin.get_product(access_token, query.data)
 
     product_name = product['data']['name']
@@ -52,9 +68,12 @@ def handle_menu(bot, update, access_token):
     return "HANDLE_DESCRIPTION"
 
 
-def handle_description(bot, update, products):
+def handle_description(bot, update, products, access_token):
     query = update.callback_query
-    if query.data == 'Назад':
+
+    button, product_id = query.data.split('/')
+
+    if button == 'Назад':
         # start(bot, update, products)
         del_old_message(bot, update)
         keyboard = []
@@ -64,6 +83,11 @@ def handle_description(bot, update, products):
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
+    elif button:
+        moltin.add_product_to_cart(access_token, product_id, query.message.chat_id, button)
+        cart = moltin.get_cart(access_token, query.message.chat_id)
+        pprint(cart)
+        return "HANDLE_DESCRIPTION"
 
 
 def handle_users_reply(bot, update):
@@ -90,7 +114,7 @@ def handle_users_reply(bot, update):
     states_functions = {
         'START': partial(start, products=products),
         'HANDLE_MENU': partial(handle_menu, access_token=moltin_access_token),
-        'HANDLE_DESCRIPTION': partial(handle_description, products=products)
+        'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token)
     }
     state_handler = states_functions[user_state]
     try:

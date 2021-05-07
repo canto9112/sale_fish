@@ -12,51 +12,58 @@ from pprint import pprint
 _database = None
 
 
+def del_old_message(bot, update):
+    query = update.callback_query
+    old_message = update.callback_query.message['message_id']
+
+    bot.delete_message(chat_id=query.message.chat_id,
+                       message_id=old_message)
+
+
 def start(bot, update, products):
     keyboard = []
     for product in products:
         button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
         keyboard.append(button)
-
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
-
     return "HANDLE_MENU"
 
 
 def handle_menu(bot, update, access_token):
-
     keyboard = [[InlineKeyboardButton("Назад", callback_data='Назад')]]
-
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     query = update.callback_query
     product = moltin.get_product(access_token, query.data)
-    print(update.callback_query.message['message_id'])
-    print('==========')
+
     product_name = product['data']['name']
     price = product['data']['meta']['display_price']['with_tax']['formatted']
     stock = product['data']['meta']['stock']['level']
     description = product['data']['description']
     file_id = product['data']['relationships']['main_image']['data']['id']
+
     image = moltin.get_image_url(access_token, file_id)
     bot.send_photo(query.message.chat_id, image, caption=f"{product_name}\n"
                                                          f"{price} per kg\n"
                                                          f"{stock}kg on stock\n"
                                                          f"{description}", reply_markup=reply_markup)
-    old_message = update.callback_query.message['message_id']
-
-    bot.delete_message(chat_id=query.message.chat_id,
-                       message_id=old_message)
+    del_old_message(bot, update)
     return "HANDLE_DESCRIPTION"
 
 
-def handle_description(bot, update):
-
+def handle_description(bot, update, products):
     query = update.callback_query
     if query.data == 'Назад':
-        return "HANDLE_MENU"
+        # start(bot, update, products)
+        del_old_message(bot, update)
+        keyboard = []
+        for product in products:
+            button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
+            keyboard.append(button)
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
+        return 'HANDLE_MENU'
 
 
 def handle_users_reply(bot, update):
@@ -83,7 +90,7 @@ def handle_users_reply(bot, update):
     states_functions = {
         'START': partial(start, products=products),
         'HANDLE_MENU': partial(handle_menu, access_token=moltin_access_token),
-        'HANDLE_DESCRIPTION': handle_description
+        'HANDLE_DESCRIPTION': partial(handle_description, products=products)
     }
     state_handler = states_functions[user_state]
     try:
@@ -113,7 +120,6 @@ if __name__ == '__main__':
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(CallbackQueryHandler(handle_menu))
     dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dispatcher.add_handler(CommandHandler('start', handle_users_reply))
 

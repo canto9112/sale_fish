@@ -76,8 +76,27 @@ def handle_description(bot, update, products, access_token):
     elif button == 'Корзина':
         cart = moltin.get_cart(access_token, query.message.chat_id)
         cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
+        products_in_cart = []
+        for product_in_cart in cart_items['data']:
+            product_name = product_in_cart['name']
+            description = product_in_cart['description']
+            price = product_in_cart['meta']['display_price']['with_tax']['unit']['formatted']
+            quantity = product_in_cart['quantity']
+            all_price = product_in_cart['meta']['display_price']['with_tax']['value']['formatted']
+
+            products_in_cart.append({'product_name': product_name,
+                                     'description': description,
+                                     'price': price,
+                                     'quantity': quantity,
+                                     'all_price': all_price})
 
         total_price = cart['data']['meta']['display_price']['with_tax']['formatted']
+        for product in products_in_cart:
+            bot.send_message(chat_id=query.message.chat_id, text=f'{product["product_name"]}\n'
+                                                                 f'{product["description"]}\n'
+                                                                 f'{product["price"]}per kg\n'
+                                                                 f'{product["quantity"]}kg in cart for {product["all_price"]}')
+
         bot.send_message(chat_id=query.message.chat_id, text=f'Всего на сумму:\n'
                                                              f'{total_price}')
 

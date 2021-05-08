@@ -64,7 +64,7 @@ def handle_button_menu(bot, update, access_token):
     return "HANDLE_DESCRIPTION"
 
 
-def cart(bot, update, products):
+def cart(bot, update, products, access_token):
     query = update.callback_query
 
     if query.data == 'Меню':
@@ -73,6 +73,11 @@ def cart(bot, update, products):
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
+
+    elif query.data:
+        print(query.data)
+        moltin.delete_product_in_cart(access_token, query.message.chat_id, query.data)
+        del_old_message(bot, update)
 
 
 def handle_description(bot, update, products, access_token):
@@ -87,14 +92,17 @@ def handle_description(bot, update, products, access_token):
         return 'HANDLE_MENU'
 
     elif button == 'Корзина':
-        button_menu = [[InlineKeyboardButton("Меню", callback_data="Меню")]]
-
-        reply_markup = InlineKeyboardMarkup(button_menu)
+        button_menu = [InlineKeyboardButton("Меню", callback_data="Меню")]
 
         cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
         products_in_cart = []
+        keyboard = []
         for product_in_cart in cart_items['data']:
+
             product_name = product_in_cart['name']
+            button = [InlineKeyboardButton(f'Убрать из корзины {product_name}', callback_data=product_in_cart['id'])]
+            keyboard.append(button)
+
             description = product_in_cart['description']
             price = product_in_cart['meta']['display_price']['with_tax']['unit']['formatted']
             quantity = product_in_cart['quantity']
@@ -102,11 +110,11 @@ def handle_description(bot, update, products, access_token):
 
             products_in_cart.append(f'{product_name}\n{description}\n{price}per kg\n{quantity}kg in cart for {all_price}\n\n')
 
+        keyboard.append(button_menu)
+        reply_markup = InlineKeyboardMarkup(keyboard)
         myString = ''.join(products_in_cart)
         print(myString)
         print('============')
-        new = json.dumps(products_in_cart)
-        pprint(new)
         del_old_message(bot, update)
 
         cart = moltin.get_cart(access_token, query.message.chat_id)
@@ -146,7 +154,7 @@ def handle_users_reply(bot, update):
         'START': partial(start, products=products),
         'HANDLE_MENU': partial(handle_button_menu, access_token=moltin_access_token),
         'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token),
-        'HANDLE_CART': partial(cart, products=products)
+        'HANDLE_CART': partial(cart, products=products, access_token=moltin_access_token)
     }
     state_handler = states_functions[user_state]
     try:

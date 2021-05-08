@@ -74,14 +74,28 @@ def cart(bot, update, products, access_token):
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
 
+    elif query.data == 'Оплатить':
+        bot.send_message(chat_id=query.message.chat_id, text='Введите вашу почту для связи:')
+        return "WAITING_EMAIL"
+
     elif query.data:
         print(query.data)
         moltin.delete_product_in_cart(access_token, query.message.chat_id, query.data)
-        del_old_message(bot, update)
+        return "HANDLE_CART"
+
+
+def send_mail(bot, update):
+    # query = update.callback_query
+    # update.message.reply_text('Вы ввели:')
+    # bot.send_message(chat_id=query.message.chat_id, text='привет Саша')
+
+    users_reply = update.message.text
+    update.message.reply_text(f'Вы отправили почту вот эту - {users_reply}')
 
 
 def handle_description(bot, update, products, access_token):
     query = update.callback_query
+    print(query.data)
     button, product_id = query.data.split('/')
 
     if button == 'Меню':
@@ -93,6 +107,7 @@ def handle_description(bot, update, products, access_token):
 
     elif button == 'Корзина':
         button_menu = [InlineKeyboardButton("Меню", callback_data="Меню")]
+        button_pay = [InlineKeyboardButton("Оплатить", callback_data="Оплатить")]
 
         cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
         products_in_cart = []
@@ -111,6 +126,7 @@ def handle_description(bot, update, products, access_token):
             products_in_cart.append(f'{product_name}\n{description}\n{price}per kg\n{quantity}kg in cart for {all_price}\n\n')
 
         keyboard.append(button_menu)
+        keyboard.append(button_pay)
         reply_markup = InlineKeyboardMarkup(keyboard)
         myString = ''.join(products_in_cart)
         print(myString)
@@ -154,7 +170,8 @@ def handle_users_reply(bot, update):
         'START': partial(start, products=products),
         'HANDLE_MENU': partial(handle_button_menu, access_token=moltin_access_token),
         'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token),
-        'HANDLE_CART': partial(cart, products=products, access_token=moltin_access_token)
+        'HANDLE_CART': partial(cart, products=products, access_token=moltin_access_token),
+        'WAITING_EMAIL': send_mail
     }
     state_handler = states_functions[user_state]
     try:

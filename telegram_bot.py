@@ -8,8 +8,25 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
 from functools import partial
 import moltin
 from pprint import pprint
+import json
+
 
 _database = None
+
+
+def start(bot, update, products):
+    keyboard = start_keyboard(products)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    return "HANDLE_MENU"
+
+
+def start_keyboard(products):
+    keyboard = []
+    for product in products:
+        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
+        keyboard.append(button)
+    return keyboard
 
 
 def del_old_message(bot, update):
@@ -20,17 +37,7 @@ def del_old_message(bot, update):
                        message_id=old_message)
 
 
-def start(bot, update, products):
-    keyboard = []
-    for product in products:
-        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
-        keyboard.append(button)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
-    return "HANDLE_MENU"
-
-
-def handle_menu(bot, update, access_token):
+def handle_button_menu(bot, update, access_token):
     query = update.callback_query
     keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}'),
                  InlineKeyboardButton("5 кг", callback_data=f'{5}/{query.data}'),
@@ -62,10 +69,7 @@ def cart(bot, update, products):
 
     if query.data == 'Меню':
         del_old_message(bot, update)
-        keyboard = []
-        for product in products:
-            button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
-            keyboard.append(button)
+        keyboard = start_keyboard(products)
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
@@ -73,24 +77,20 @@ def cart(bot, update, products):
 
 def handle_description(bot, update, products, access_token):
     query = update.callback_query
-
     button, product_id = query.data.split('/')
+
     if button == 'Меню':
-        # start(bot, update, products)
         del_old_message(bot, update)
-        keyboard = []
-        for product in products:
-            button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
-            keyboard.append(button)
+        keyboard = start_keyboard(products)
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id=query.message.chat_id, text='Please choose:', reply_markup=reply_markup)
         return 'HANDLE_MENU'
 
     elif button == 'Корзина':
-        keyboard = [[InlineKeyboardButton("Меню", callback_data="Меню")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        button_menu = [[InlineKeyboardButton("Меню", callback_data="Меню")]]
 
-        cart = moltin.get_cart(access_token, query.message.chat_id)
+        reply_markup = InlineKeyboardMarkup(button_menu)
+
         cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
         products_in_cart = []
         for product_in_cart in cart_items['data']:
@@ -100,20 +100,19 @@ def handle_description(bot, update, products, access_token):
             quantity = product_in_cart['quantity']
             all_price = product_in_cart['meta']['display_price']['with_tax']['value']['formatted']
 
-            products_in_cart.append({'product_name': product_name,
-                                     'description': description,
-                                     'price': price,
-                                     'quantity': quantity,
-                                     'all_price': all_price})
+            products_in_cart.append(f'{product_name}\n{description}\n{price}per kg\n{quantity}kg in cart for {all_price}\n\n')
 
+        myString = ''.join(products_in_cart)
+        print(myString)
+        print('============')
+        new = json.dumps(products_in_cart)
+        pprint(new)
+        del_old_message(bot, update)
+
+        cart = moltin.get_cart(access_token, query.message.chat_id)
         total_price = cart['data']['meta']['display_price']['with_tax']['formatted']
-        for product in products_in_cart:
-            bot.send_message(chat_id=query.message.chat_id, text=f'{product["product_name"]}\n'
-                                                                 f'{product["description"]}\n'
-                                                                 f'{product["price"]}per kg\n'
-                                                                 f'{product["quantity"]}kg in cart for {product["all_price"]}')
-
-        bot.send_message(chat_id=query.message.chat_id, text=f'Всего на сумму:\n'
+        bot.send_message(chat_id=query.message.chat_id, text=f'{myString}\n'
+                                                             f'Всего на сумму:\n'
                                                              f'{total_price}', reply_markup=reply_markup)
         return "HANDLE_CART"
 
@@ -145,7 +144,7 @@ def handle_users_reply(bot, update):
 
     states_functions = {
         'START': partial(start, products=products),
-        'HANDLE_MENU': partial(handle_menu, access_token=moltin_access_token),
+        'HANDLE_MENU': partial(handle_button_menu, access_token=moltin_access_token),
         'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token),
         'HANDLE_CART': partial(cart, products=products)
     }

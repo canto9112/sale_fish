@@ -29,18 +29,12 @@ def get_id_product(product):
 
 
 def add_product_to_cart(token, product_id, cart_name, quantity):
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-    }
+    headers = {'Authorization': f'Bearer {token}',
+               'Content-Type': 'application/json'}
 
-    data = {'data':
-            {
-                'id': product_id,
-                'type': 'cart_item',
-                'quantity': quantity
-            }
-           }
+    data = {'data': {'id': product_id,
+                     'type': 'cart_item',
+                     'quantity': int(quantity)}}
 
     response = requests.post(f'https://api.moltin.com/v2/carts/{cart_name}/items',
                              headers=headers,
@@ -79,6 +73,24 @@ def get_product(token, product_id):
     return response.json()
 
 
+def get_image_url(token, file_id):
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+    response = requests.get(f'https://api.moltin.com/v2/files/{file_id}', headers=headers)
+    response.raise_for_status()
+    return response.json()['data']['link']['href']
+
+
+def delete_product_in_cart(token, cart_name, product_id):
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+    response = requests.delete(f'https://api.moltin.com/v2/carts/{cart_name}/items/{product_id}', headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+
 def main():
     env = Env()
     env.read_env()
@@ -91,14 +103,13 @@ def main():
 
     for product in all_products:
         product_id = get_id_product(product)
-        product_ = get_product(access_token, product_id)
-        pprint(product_['data']['description'])
-
-
-        # add_product = add_product_to_cart(access_token, product_id, '3456546', 2)
-        # cart = get_cart(access_token, '3456546')
-        # pprint(cart)
-        # pprint(get_cart_items(access_token, '34565464'))
+        add_product = add_product_to_cart(access_token, product_id, 'b34t', 1)
+        pprint(add_product)
+        print('======================')
+        cart = get_cart(access_token, 'b34t')
+        pprint(cart)
+        print('======================')
+        pprint(get_cart_items(access_token, 'b34t'))
         break
 
 

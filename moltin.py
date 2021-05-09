@@ -91,6 +91,21 @@ def delete_product_in_cart(token, cart_name, product_id):
     return response.json()
 
 
+def create_costomer(token, name, email):
+    headers = {'Authorization': f'Bearer {token}',
+               'Content-Type': 'application/json'}
+
+    data = {'data': {
+                "type": "customer",
+                "name": name,
+                "email": email}}
+
+    response = requests.post('https://api.moltin.com/v2/customers', headers=headers, json=data)
+    response.raise_for_status()
+    pprint(response.json())
+    return response.json()
+
+
 def main():
     env = Env()
     env.read_env()
@@ -100,17 +115,17 @@ def main():
 
     access_token = get_access_token(client_id, client_secret)
     all_products = get_all_products(access_token)
-
-    for product in all_products:
-        product_id = get_id_product(product)
-        add_product = add_product_to_cart(access_token, product_id, 'b34t', 1)
-        pprint(add_product)
-        print('======================')
-        cart = get_cart(access_token, 'b34t')
-        pprint(cart)
-        print('======================')
-        pprint(get_cart_items(access_token, 'b34t'))
-        break
+    create_costomer(access_token, 'alex', 'access_token@gmail.com')
+    # for product in all_products:
+    #     product_id = get_id_product(product)
+    #     add_product = add_product_to_cart(access_token, product_id, 'b34t', 1)
+    #     pprint(add_product)
+    #     print('======================')
+    #     cart = get_cart(access_token, 'b34t')
+    #     pprint(cart)
+    #     print('======================')
+    #     pprint(get_cart_items(access_token, 'b34t'))
+    #     break
 
 
 if __name__ == "__main__":

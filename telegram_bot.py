@@ -79,7 +79,6 @@ def cart(bot, update, products, access_token):
         return "WAITING_EMAIL"
 
     elif query.data:
-        print(query.data)
         moltin.delete_product_in_cart(access_token, query.message.chat_id, query.data)
         # del_old_message(bot, update)
         update_cart(bot, update, access_token)
@@ -111,8 +110,7 @@ def update_cart(bot, update, access_token):
     keyboard.append(button_pay)
     reply_markup = InlineKeyboardMarkup(keyboard)
     myString = ''.join(products_in_cart)
-    print(myString)
-    print('============')
+
     del_old_message(bot, update)
 
     cart = moltin.get_cart(access_token, query.message.chat_id)
@@ -122,8 +120,10 @@ def update_cart(bot, update, access_token):
                                                          f'{total_price}', reply_markup=reply_markup)
 
 
-def send_mail(bot, update):
+def send_mail(bot, update, access_token):
     users_reply = update.message.text
+    username = update.message['chat']['first_name']
+    moltin.create_costomer(access_token, username, users_reply)
     update.message.reply_text(f'Вы отправили почту вот эту - {users_reply}')
 
 
@@ -174,7 +174,7 @@ def handle_users_reply(bot, update):
         'HANDLE_MENU': partial(handle_button_menu, access_token=moltin_access_token),
         'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token),
         'HANDLE_CART': partial(cart, products=products, access_token=moltin_access_token),
-        'WAITING_EMAIL': send_mail
+        'WAITING_EMAIL': partial(send_mail, access_token=moltin_access_token)
     }
     state_handler = states_functions[user_state]
     try:

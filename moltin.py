@@ -89,7 +89,7 @@ def delete_product_in_cart(token, cart_name, product_id):
     return response.json()
 
 
-def create_costomer(token, name, email):
+def create_customer(token, name, email):
     headers = {'Authorization': f'Bearer {token}',
                'Content-Type': 'application/json'}
 

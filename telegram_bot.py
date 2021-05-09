@@ -1,15 +1,11 @@
-from environs import Env
-import logging
-import redis
-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Filters, Updater
-from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
 from functools import partial
-import moltin
-from pprint import pprint
-import json
 
+import redis
+from environs import Env
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+
+import moltin
 
 _database = None
 
@@ -123,7 +119,7 @@ def update_cart(bot, update, access_token):
 def send_mail(bot, update, access_token):
     users_reply = update.message.text
     username = update.message['chat']['first_name']
-    moltin.create_costomer(access_token, username, users_reply)
+    moltin.create_customer(access_token, username, users_reply)
     update.message.reply_text(f'Вы отправили почту вот эту - {users_reply}')
 
 

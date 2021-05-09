@@ -22,10 +22,6 @@ def get_all_products(token):
     return response['data']
 
 
-def get_id_product(product):
-    return product['id']
-
-
 def add_product_to_cart(token, product_id, cart_name, quantity):
     headers = {'Authorization': f'Bearer {token}',
                'Content-Type': 'application/json'}

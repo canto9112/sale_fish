@@ -76,7 +76,6 @@ def cart(bot, update, products, access_token):
 
     elif query.data:
         moltin.delete_product_in_cart(access_token, query.message.chat_id, query.data)
-        # del_old_message(bot, update)
         update_cart(bot, update, access_token)
         return "HANDLE_CART"
 
@@ -125,7 +124,6 @@ def send_mail(bot, update, access_token):
 
 def handle_description(bot, update, products, access_token):
     query = update.callback_query
-    print(query.data)
     button, product_id = query.data.split('/')
 
     if button == 'Меню':
@@ -144,13 +142,7 @@ def handle_description(bot, update, products, access_token):
         return "HANDLE_DESCRIPTION"
 
 
-def handle_users_reply(bot, update):
-    moltin_client_id = env('MULTIN_CLIENT_ID')
-    moltin_client_secret = env('MULTIN_CLIENT_SECRET')
-
-    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    products = moltin.get_all_products(moltin_access_token)
-
+def handle_users_reply(bot, update, moltin_access_token, products):
     db = get_database_connection()
     if update.message:
         user_reply = update.message.text
@@ -196,11 +188,17 @@ if __name__ == '__main__':
 
     telegram_token = env("TELEGRAM_TOKEN")
 
+    moltin_client_id = env('MULTIN_CLIENT_ID')
+    moltin_client_secret = env('MULTIN_CLIENT_SECRET')
+
+    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    products = moltin.get_all_products(moltin_access_token)
+
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
-    dispatcher.add_handler(CommandHandler('start', handle_users_reply))
+    dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products)))
+    dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products))))
+    dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products))))
 
     updater.start_polling()

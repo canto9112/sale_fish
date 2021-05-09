@@ -1,5 +1,3 @@
-from pprint import pprint
-
 import requests
 
 
@@ -102,5 +100,4 @@ def create_costomer(token, name, email):
 
     response = requests.post('https://api.moltin.com/v2/customers', headers=headers, json=data)
     response.raise_for_status()
-    pprint(response)
     return response.json()

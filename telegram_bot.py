@@ -7,8 +7,6 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageH
 
 import moltin
 
-_database = None
-
 
 def start(bot, update, products):
     keyboard = start_keyboard(products)
@@ -82,35 +80,38 @@ def cart(bot, update, products, access_token):
 
 def update_cart(bot, update, access_token):
     query = update.callback_query
+
     button_menu = [InlineKeyboardButton("Меню", callback_data="Меню")]
     button_pay = [InlineKeyboardButton("Оплатить", callback_data="Оплатить")]
 
     cart_items = moltin.get_cart_items(access_token, query.message.chat_id)
+    cart = moltin.get_cart(access_token, query.message.chat_id)
+    total_price = cart['data']['meta']['display_price']['with_tax']['formatted']
+
     products_in_cart = []
     keyboard = []
     for product_in_cart in cart_items['data']:
         product_name = product_in_cart['name']
-        button = [InlineKeyboardButton(f'Убрать из корзины {product_name}', callback_data=product_in_cart['id'])]
-        keyboard.append(button)
-
         description = product_in_cart['description']
         price = product_in_cart['meta']['display_price']['with_tax']['unit']['formatted']
         quantity = product_in_cart['quantity']
         all_price = product_in_cart['meta']['display_price']['with_tax']['value']['formatted']
 
-        products_in_cart.append(
-            f'{product_name}\n{description}\n{price}per kg\n{quantity}kg in cart for {all_price}\n\n')
+        button = [InlineKeyboardButton(f'Убрать из корзины {product_name}', callback_data=product_in_cart['id'])]
+        keyboard.append(button)
+        products_in_cart.append(f'{product_name}\n'
+                                f'{description}\n'
+                                f'{price}per kg\n'
+                                f'{quantity}kg in cart for {all_price}\n\n')
 
     keyboard.append(button_menu)
     keyboard.append(button_pay)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    myString = ''.join(products_in_cart)
+    cart_text = ''.join(products_in_cart)
 
     del_old_message(bot, update)
 
-    cart = moltin.get_cart(access_token, query.message.chat_id)
-    total_price = cart['data']['meta']['display_price']['with_tax']['formatted']
-    bot.send_message(chat_id=query.message.chat_id, text=f'{myString}\n'
+    bot.send_message(chat_id=query.message.chat_id, text=f'{cart_text}\n'
                                                          f'Всего на сумму:\n'
                                                          f'{total_price}', reply_markup=reply_markup)
 
@@ -158,11 +159,18 @@ def handle_users_reply(bot, update, moltin_access_token, products):
         user_state = db.get(chat_id).decode("utf-8")
 
     states_functions = {
-        'START': partial(start, products=products),
-        'HANDLE_MENU': partial(handle_button_menu, access_token=moltin_access_token),
-        'HANDLE_DESCRIPTION': partial(handle_description, products=products, access_token=moltin_access_token),
-        'HANDLE_CART': partial(cart, products=products, access_token=moltin_access_token),
-        'WAITING_EMAIL': partial(send_mail, access_token=moltin_access_token)
+        'START': partial(start,
+                         products=products),
+        'HANDLE_MENU': partial(handle_button_menu,
+                               access_token=moltin_access_token),
+        'HANDLE_DESCRIPTION': partial(handle_description,
+                                      products=products,
+                                      access_token=moltin_access_token),
+        'HANDLE_CART': partial(cart,
+                               products=products,
+                               access_token=moltin_access_token),
+        'WAITING_EMAIL': partial(send_mail,
+                                 access_token=moltin_access_token)
     }
     state_handler = states_functions[user_state]
     try:
@@ -173,13 +181,13 @@ def handle_users_reply(bot, update, moltin_access_token, products):
 
 
 def get_database_connection():
-    global _database
-    if _database is None:
-        database_password = env("REDIS_PASSWORD")
-        database_host = env("REDIS_HOST")
-        database_port = env("REDIS_PORT")
-        _database = redis.Redis(host=database_host, port=database_port, password=database_password)
-    return _database
+    database_password = env("REDIS_PASSWORD")
+    database_host = env("REDIS_HOST")
+    database_port = env("REDIS_PORT")
+    database = redis.Redis(host=database_host,
+                           port=database_port,
+                           password=database_password)
+    return database
 
 
 if __name__ == '__main__':
@@ -188,8 +196,8 @@ if __name__ == '__main__':
 
     telegram_token = env("TELEGRAM_TOKEN")
 
-    moltin_client_id = env('MULTIN_CLIENT_ID')
-    moltin_client_secret = env('MULTIN_CLIENT_SECRET')
+    moltin_client_id = env('MOLTIN_CLIENT_ID')
+    moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
 
     moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
     products = moltin.get_all_products(moltin_access_token)
@@ -197,8 +205,14 @@ if __name__ == '__main__':
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products)))
-    dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products))))
-    dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply, moltin_access_token=moltin_access_token, products=products))))
+    dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
+                                                        moltin_access_token=moltin_access_token,
+                                                        products=products)))
+    dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
+                                                                 moltin_access_token=moltin_access_token,
+                                                                 products=products))))
+    dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
+                                                            moltin_access_token=moltin_access_token,
+                                                            products=products))))
 
     updater.start_polling()

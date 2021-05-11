@@ -58,7 +58,7 @@ def handle_button_menu(bot, update, access_token):
     return "HANDLE_DESCRIPTION"
 
 
-def cart(bot, update, products, access_token):
+def get_cart(bot, update, products, access_token):
     query = update.callback_query
 
     if query.data == 'Меню':
@@ -166,7 +166,7 @@ def handle_users_reply(bot, update, moltin_access_token, products):
         'HANDLE_DESCRIPTION': partial(handle_description,
                                       products=products,
                                       access_token=moltin_access_token),
-        'HANDLE_CART': partial(cart,
+        'HANDLE_CART': partial(get_cart,
                                products=products,
                                access_token=moltin_access_token),
         'WAITING_EMAIL': partial(send_mail,

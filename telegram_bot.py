@@ -142,7 +142,6 @@ def handle_description(bot, update, products, access_token):
 
 
 def handle_users_reply(bot, update, moltin_access_token, products):
-    db = get_database_connection()
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -190,11 +189,11 @@ if __name__ == '__main__':
     env = Env()
     env.read_env()
 
-    telegram_token = env("TELEGRAM_TOKEN")
+    db = get_database_connection()
 
+    telegram_token = env("TELEGRAM_TOKEN")
     moltin_client_id = env('MOLTIN_CLIENT_ID')
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
-
     moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
     products = moltin.get_all_products(moltin_access_token)
 

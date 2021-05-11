@@ -7,6 +7,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 import moltin
+import time
+import requests
 
 
 def start(bot, update, products):
@@ -186,12 +188,6 @@ def get_database_connection():
     return database
 
 
-def access_token():
-    threading.Timer(3599.0, access_token).start()
-    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    return moltin_access_token
-
-
 if __name__ == '__main__':
     env = Env()
     env.read_env()
@@ -202,9 +198,8 @@ if __name__ == '__main__':
     moltin_client_id = env('MOLTIN_CLIENT_ID')
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
 
-    moltin_access_token = access_token()
-
     # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    moltin_access_token = moltin.get_token(moltin_client_id, moltin_client_secret)
 
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher

@@ -1,4 +1,18 @@
 import requests
+import time
+from pprint import pprint
+
+
+def get_token(client_id, client_secret):
+    token = get_access_token(client_id, client_secret)
+    access_token = token['access_token']
+    expires = token['expires']
+    token_work = int(time.time()) < expires
+    if token_work:
+        return access_token
+
+    token = get_access_token(client_id, client_secret)
+    return token['access_token']
 
 
 def get_access_token(client_id, client_secret):
@@ -9,10 +23,8 @@ def get_access_token(client_id, client_secret):
     }
     response = requests.post('https://api.moltin.com/oauth/access_token', data=data)
     response.raise_for_status()
-    response = response.json()
-    access_token = response['access_token']
-
-    return access_token
+    token = response.json()
+    return token
 
 
 def get_all_products(token):

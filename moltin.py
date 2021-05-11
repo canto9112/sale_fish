@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 
@@ -11,6 +13,7 @@ def get_access_token(client_id, client_secret):
     response.raise_for_status()
     response = response.json()
     access_token = response['access_token']
+    time.sleep(60 * 60)
     return access_token
 
 

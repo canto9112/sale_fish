@@ -173,11 +173,9 @@ def handle_users_reply(bot, update, moltin_access_token, products):
                                  access_token=moltin_access_token)
     }
     state_handler = states_functions[user_state]
-    try:
-        next_state = state_handler(bot, update)
-        db.set(chat_id, next_state)
-    except Exception as err:
-        print(err)
+
+    next_state = state_handler(bot, update)
+    db.set(chat_id, next_state)
 
 
 def get_database_connection():

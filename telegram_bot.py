@@ -141,7 +141,8 @@ def handle_description(bot, update, products, access_token):
         return "HANDLE_DESCRIPTION"
 
 
-def handle_users_reply(bot, update, moltin_access_token, products):
+def handle_users_reply(bot, update, moltin_access_token):
+    products = moltin.get_all_products(moltin_access_token)
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -204,19 +205,15 @@ if __name__ == '__main__':
     moltin_access_token = access_token()
 
     # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    products = moltin.get_all_products(moltin_access_token)
 
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
-                                                        moltin_access_token=moltin_access_token,
-                                                        products=products)))
+                                                        moltin_access_token=moltin_access_token)))
     dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
-                                                                 moltin_access_token=moltin_access_token,
-                                                                 products=products))))
+                                                                 moltin_access_token=moltin_access_token))))
     dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
-                                                            moltin_access_token=moltin_access_token,
-                                                            products=products))))
+                                                            moltin_access_token=moltin_access_token))))
 
     updater.start_polling()

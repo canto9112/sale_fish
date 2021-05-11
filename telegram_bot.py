@@ -6,6 +6,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 import moltin
+import threading
 
 
 def start(bot, update, products):
@@ -184,6 +185,12 @@ def get_database_connection():
     return database
 
 
+def access_token():
+    threading.Timer(3599.0, access_token).start()
+    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    return moltin_access_token
+
+
 if __name__ == '__main__':
     env = Env()
     env.read_env()
@@ -194,22 +201,22 @@ if __name__ == '__main__':
     moltin_client_id = env('MOLTIN_CLIENT_ID')
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
 
-    while True:
-        moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    moltin_access_token = access_token()
 
-        products = moltin.get_all_products(moltin_access_token)
+    # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
+    products = moltin.get_all_products(moltin_access_token)
 
-        updater = Updater(telegram_token)
-        dispatcher = updater.dispatcher
+    updater = Updater(telegram_token)
+    dispatcher = updater.dispatcher
 
-        dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
+    dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
+                                                        moltin_access_token=moltin_access_token,
+                                                        products=products)))
+    dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
+                                                                 moltin_access_token=moltin_access_token,
+                                                                 products=products))))
+    dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
                                                             moltin_access_token=moltin_access_token,
-                                                            products=products)))
-        dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
-                                                                     moltin_access_token=moltin_access_token,
-                                                                     products=products))))
-        dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
-                                                                moltin_access_token=moltin_access_token,
-                                                                products=products))))
+                                                            products=products))))
 
-        updater.start_polling()
+    updater.start_polling()

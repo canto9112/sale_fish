@@ -4,7 +4,6 @@ import redis
 from environs import Env
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
-from pprint import pprint
 
 import moltin
 
@@ -194,20 +193,23 @@ if __name__ == '__main__':
     telegram_token = env("TELEGRAM_TOKEN")
     moltin_client_id = env('MOLTIN_CLIENT_ID')
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
-    moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    products = moltin.get_all_products(moltin_access_token)
 
-    updater = Updater(telegram_token)
-    dispatcher = updater.dispatcher
+    while True:
+        moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
 
-    dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
-                                                        moltin_access_token=moltin_access_token,
-                                                        products=products)))
-    dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
-                                                                 moltin_access_token=moltin_access_token,
-                                                                 products=products))))
-    dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
+        products = moltin.get_all_products(moltin_access_token)
+
+        updater = Updater(telegram_token)
+        dispatcher = updater.dispatcher
+
+        dispatcher.add_handler(CallbackQueryHandler(partial(handle_users_reply,
                                                             moltin_access_token=moltin_access_token,
-                                                            products=products))))
+                                                            products=products)))
+        dispatcher.add_handler(MessageHandler(Filters.text, (partial(handle_users_reply,
+                                                                     moltin_access_token=moltin_access_token,
+                                                                     products=products))))
+        dispatcher.add_handler(CommandHandler('start', (partial(handle_users_reply,
+                                                                moltin_access_token=moltin_access_token,
+                                                                products=products))))
 
-    updater.start_polling()
+        updater.start_polling()

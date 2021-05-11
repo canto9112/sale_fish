@@ -4,6 +4,7 @@ import redis
 from environs import Env
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+from pprint import pprint
 
 import moltin
 
@@ -16,10 +17,7 @@ def start(bot, update, products):
 
 
 def start_keyboard(products):
-    keyboard = []
-    for product in products:
-        button = [InlineKeyboardButton(product['name'], callback_data=product['id'])]
-        keyboard.append(button)
+    keyboard = [[InlineKeyboardButton(product['name'], callback_data=product['id'])] for product in products]
     return keyboard
 
 

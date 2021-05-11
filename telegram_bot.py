@@ -74,11 +74,11 @@ def cart(bot, update, products, access_token):
 
     elif query.data:
         moltin.delete_product_in_cart(access_token, query.message.chat_id, query.data)
-        update_cart(bot, update, access_token)
+        get_updating_cart(bot, update, access_token)
         return "HANDLE_CART"
 
 
-def update_cart(bot, update, access_token):
+def get_updating_cart(bot, update, access_token):
     query = update.callback_query
 
     button_menu = [InlineKeyboardButton("Меню", callback_data="Меню")]
@@ -135,7 +135,7 @@ def handle_description(bot, update, products, access_token):
         return 'HANDLE_MENU'
 
     elif button == 'Корзина':
-        update_cart(bot, update, access_token)
+        get_updating_cart(bot, update, access_token)
         return "HANDLE_CART"
 
     elif button:

@@ -1,21 +1,34 @@
 import requests
 import time
 from pprint import pprint
+from threading import Timer
+
+auth_data = None
+token = None
 
 
-def get_token(client_id, client_secret):
-    token = get_access_token(client_id, client_secret)
-    access_token = token['access_token']
-    expires = token['expires']
-    token_work = int(time.time()) < expires
-    if token_work:
-        return access_token
-
-    token = get_access_token(client_id, client_secret)
-    return token['access_token']
+def checking_token(token_data):
+    now = int(time.time())
+    token_expires = token_data['expires']
+    return now < token_expires
 
 
-def get_access_token(client_id, client_secret):
+def get_authorization_token(client_id, client_secret):
+    global token
+    global auth_data
+    if token is None:
+        auth_data = get_token_data(client_id, client_secret)
+        token = auth_data['access_token']
+    else:
+        if checking_token(auth_data):
+            token = auth_data['access_token']
+        else:
+            auth_data = get_token_data(client_id, client_secret)
+            token = auth_data['access_token']
+    return token
+
+
+def get_token_data(client_id, client_secret):
     data = {
         'client_id': client_id,
         'client_secret': client_secret,
@@ -23,8 +36,7 @@ def get_access_token(client_id, client_secret):
     }
     response = requests.post('https://api.moltin.com/oauth/access_token', data=data)
     response.raise_for_status()
-    token = response.json()
-    return token
+    return response.json()
 
 
 def get_all_products(token):

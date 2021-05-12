@@ -9,6 +9,7 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageH
 import moltin
 import time
 import requests
+from threading import Timer
 
 
 def start(bot, update, products):
@@ -199,7 +200,7 @@ if __name__ == '__main__':
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
 
     # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
-    moltin_access_token = moltin.get_token(moltin_client_id, moltin_client_secret)
+    moltin_access_token = moltin.get_authorization_token(moltin_client_id, moltin_client_secret)
 
     updater = Updater(telegram_token)
     dispatcher = updater.dispatcher
@@ -212,3 +213,5 @@ if __name__ == '__main__':
                                                             moltin_access_token=moltin_access_token))))
 
     updater.start_polling()
+    t = Timer(3.0, moltin_access_token)
+    t.start()

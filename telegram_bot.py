@@ -213,5 +213,4 @@ if __name__ == '__main__':
                                                             moltin_access_token=moltin_access_token))))
 
     updater.start_polling()
-    t = Timer(3.0, moltin_access_token)
-    t.start()
+

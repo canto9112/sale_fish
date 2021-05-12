@@ -1,4 +1,3 @@
-import threading
 from functools import partial
 
 import redis
@@ -7,9 +6,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 import moltin
-import time
-import requests
-from threading import Timer
 
 
 def start(bot, update, products):

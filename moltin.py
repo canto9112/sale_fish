@@ -1,7 +1,6 @@
-import requests
 import time
-from pprint import pprint
-from threading import Timer
+
+import requests
 
 auth_data = None
 token = None

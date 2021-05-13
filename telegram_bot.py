@@ -47,9 +47,6 @@ def handle_button_menu(bot, update, access_token):
     file_id = product['data']['relationships']['main_image']['data']['id']
 
     image = moltin.get_image_url(access_token, file_id)
-    # bot.send_message(chat_id=query.message.chat_id,
-    #                  text="*bold* _italic_ `fixed width font` [link](http://google.com)\.",
-    #                  parse_mode=ParseMode.MARKDOWN)
     bot.send_photo(query.message.chat_id, image, caption=f"*{product_name}*\n\n"
                                                          f"*Цена*: {price} за кг.\n"
                                                          f"*Есть на складе*: {stock} кг. в наличии\n\n"

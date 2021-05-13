@@ -2,7 +2,7 @@ from functools import partial
 
 import redis
 from environs import Env
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 import moltin
@@ -30,7 +30,6 @@ def del_old_message(bot, update):
 
 def handle_button_menu(bot, update, access_token):
     query = update.callback_query
-    print(update.callback_query.answer())
     keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}', ),
                  InlineKeyboardButton("5 кг", callback_data=f'{5}/{query.data}'),
                  InlineKeyboardButton("10 кг", callback_data=f'{10}/{query.data}')],
@@ -48,11 +47,15 @@ def handle_button_menu(bot, update, access_token):
     file_id = product['data']['relationships']['main_image']['data']['id']
 
     image = moltin.get_image_url(access_token, file_id)
-
-    bot.send_photo(query.message.chat_id, image, caption=f"{product_name}\n"
-                                                         f"{price} per kg\n"
-                                                         f"{stock}kg on stock\n"
-                                                         f"{description}", reply_markup=reply_markup)
+    # bot.send_message(chat_id=query.message.chat_id,
+    #                  text="*bold* _italic_ `fixed width font` [link](http://google.com)\.",
+    #                  parse_mode=ParseMode.MARKDOWN)
+    bot.send_photo(query.message.chat_id, image, caption=f"*{product_name}*\n\n"
+                                                         f"*Цена*: {price} за кг.\n"
+                                                         f"*Есть на складе*: {stock} кг. в наличии\n\n"
+                                                         f"*Описание*: _{description}_",
+                                                         reply_markup=reply_markup,
+                                                         parse_mode=ParseMode.MARKDOWN)
 
     del_old_message(bot, update)
     return "HANDLE_DESCRIPTION"
@@ -110,10 +113,10 @@ def get_updating_cart(bot, update, access_token):
     cart_text = ''.join(products_in_cart)
 
     del_old_message(bot, update)
-
     bot.send_message(chat_id=query.message.chat_id, text=f'{cart_text}\n'
-                                                         f'Всего на сумму:\n'
-                                                         f'{total_price}', reply_markup=reply_markup)
+                                                         f'*Всего на сумму:\n'
+                                                         f'{total_price}*', reply_markup=reply_markup,
+                                                         parse_mode=ParseMode.MARKDOWN)
 
 
 def send_mail(bot, update, access_token):

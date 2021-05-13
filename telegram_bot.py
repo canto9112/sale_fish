@@ -30,7 +30,8 @@ def del_old_message(bot, update):
 
 def handle_button_menu(bot, update, access_token):
     query = update.callback_query
-    keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}'),
+    print(update.callback_query.answer())
+    keyboard = [[InlineKeyboardButton("1 кг", callback_data=f'{1}/{query.data}', ),
                  InlineKeyboardButton("5 кг", callback_data=f'{5}/{query.data}'),
                  InlineKeyboardButton("10 кг", callback_data=f'{10}/{query.data}')],
                 [InlineKeyboardButton("Меню", callback_data=f'{"Меню"}/{query.data}')],
@@ -47,10 +48,12 @@ def handle_button_menu(bot, update, access_token):
     file_id = product['data']['relationships']['main_image']['data']['id']
 
     image = moltin.get_image_url(access_token, file_id)
+
     bot.send_photo(query.message.chat_id, image, caption=f"{product_name}\n"
                                                          f"{price} per kg\n"
                                                          f"{stock}kg on stock\n"
                                                          f"{description}", reply_markup=reply_markup)
+
     del_old_message(bot, update)
     return "HANDLE_DESCRIPTION"
 
@@ -137,6 +140,7 @@ def handle_description(bot, update, products, access_token):
 
     elif button:
         moltin.add_product_to_cart(access_token, product_id, query.message.chat_id, button)
+        update.callback_query.answer(text=f"{button} кг добавлено в корзину")
         return "HANDLE_DESCRIPTION"
 
 

@@ -4,6 +4,7 @@ import redis
 from environs import Env
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+from validate_email import validate_email
 
 import moltin
 
@@ -118,9 +119,20 @@ def get_updating_cart(bot, update, access_token):
 
 def send_mail(bot, update, access_token):
     users_reply = update.message.text
-    username = update.message['chat']['first_name']
-    moltin.create_customer(access_token, username, users_reply)
-    update.message.reply_text(f'Вы отправили почту вот эту - {users_reply}')
+    is_valid_email = check_email(users_reply)
+    if is_valid_email:
+        username = update.message['chat']['first_name']
+        moltin.create_customer(access_token, username, users_reply)
+        update.message.reply_text(f'Мы записали ваш заказ!\n'
+                                  f'Информация о заказе придет на - {users_reply}')
+    else:
+        update.message.reply_text(f'Неправильно указана почта!\n'
+                                  f'Введите почту еще раз: ')
+
+
+def check_email(email):
+    is_valid = validate_email(email)
+    return is_valid
 
 
 def handle_description(bot, update, products, access_token):

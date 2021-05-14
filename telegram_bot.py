@@ -1,3 +1,4 @@
+import time
 from functools import partial
 
 import redis
@@ -7,8 +8,6 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageH
 from validate_email import validate_email
 
 import moltin
-import time
-from pprint import pprint
 
 
 def start(bot, update, products):
@@ -221,7 +220,6 @@ if __name__ == '__main__':
     moltin_client_id = env('MOLTIN_CLIENT_ID')
     moltin_client_secret = env('MOLTIN_CLIENT_SECRET')
 
-    # moltin_access_token = moltin.get_access_token(moltin_client_id, moltin_client_secret)
     moltin_access_token = moltin.get_authorization_token(moltin_client_id, moltin_client_secret)
 
     updater = Updater(telegram_token)
@@ -235,4 +233,3 @@ if __name__ == '__main__':
                                                             moltin_access_token=moltin_access_token))))
 
     updater.start_polling()
-

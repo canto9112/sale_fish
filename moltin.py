@@ -1,7 +1,6 @@
 import time
 
 import requests
-from pprint import pprint
 
 auth_data = None
 token = None

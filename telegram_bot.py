@@ -130,13 +130,11 @@ def send_mail(bot, update, access_token, products):
         moltin.clean_cart(access_token, update.message['chat']['id'])
         time.sleep(2.0)
         start(bot, update, products)
+        return 'HANDLE_MENU'
 
-    else:
-        update.message.reply_text(f'Неправильно указана почта!\n'
-                                  f'Введите почту еще раз: ')
-        return 'WAITING_EMAIL'
-
-    return 'HANDLE_MENU'
+    update.message.reply_text(f'Неправильно указана почта!\n'
+                              f'Введите почту еще раз: ')
+    return 'WAITING_EMAIL'
 
 
 def check_email(email):

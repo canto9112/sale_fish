@@ -134,6 +134,7 @@ def send_mail(bot, update, access_token, products):
     else:
         update.message.reply_text(f'Неправильно указана почта!\n'
                                   f'Введите почту еще раз: ')
+        return 'WAITING_EMAIL'
 
     return 'HANDLE_MENU'
 

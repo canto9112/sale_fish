@@ -7,6 +7,8 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageH
 from validate_email import validate_email
 
 import moltin
+import time
+from pprint import pprint
 
 
 def start(bot, update, products):
@@ -117,17 +119,24 @@ def get_updating_cart(bot, update, access_token):
                                                          parse_mode=ParseMode.MARKDOWN)
 
 
-def send_mail(bot, update, access_token):
+def send_mail(bot, update, access_token, products):
     users_reply = update.message.text
     is_valid_email = check_email(users_reply)
     if is_valid_email:
         username = update.message['chat']['first_name']
         moltin.create_customer(access_token, username, users_reply)
         update.message.reply_text(f'Мы записали ваш заказ!\n'
-                                  f'Информация о заказе придет на - {users_reply}')
+                                  f'Информация о заказе придет на - {users_reply}\n\n'
+                                  f'Ждем вас снова за покупками!')
+
     else:
         update.message.reply_text(f'Неправильно указана почта!\n'
                                   f'Введите почту еще раз: ')
+
+    moltin.clean_cart(access_token, update.message['chat']['id'])
+    time.sleep(2.0)
+    start(bot, update, products)
+    return 'HANDLE_MENU'
 
 
 def check_email(email):
@@ -183,7 +192,8 @@ def handle_users_reply(bot, update, moltin_access_token):
                                products=products,
                                access_token=moltin_access_token),
         'WAITING_EMAIL': partial(send_mail,
-                                 access_token=moltin_access_token)
+                                 access_token=moltin_access_token,
+                                 products=products)
     }
     state_handler = states_functions[user_state]
 

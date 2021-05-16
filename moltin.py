@@ -6,7 +6,7 @@ auth_data = None
 token = None
 
 
-def checking_token(token_data):
+def check_token(token_data):
     now = int(time.time())
     token_expires = token_data['expires']
     return now < token_expires
@@ -15,15 +15,10 @@ def checking_token(token_data):
 def get_authorization_token(client_id, client_secret):
     global token
     global auth_data
-    if token is None:
+
+    if not token or not check_token(auth_data):
         auth_data = get_token_data(client_id, client_secret)
         token = auth_data['access_token']
-    else:
-        if checking_token(auth_data):
-            token = auth_data['access_token']
-        else:
-            auth_data = get_token_data(client_id, client_secret)
-            token = auth_data['access_token']
     return token
 
 
